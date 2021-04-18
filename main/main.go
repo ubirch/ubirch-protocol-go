@@ -62,13 +62,11 @@ func loadProtocolContext(p *ubirch.Protocol) error {
 func main() {
 	name := "A"
 
-	var context = &ubirch.CryptoContext{
-		Keystore: ubirch.NewEncryptedKeystore([]byte("2234567890123456")), //this is only a demo code secret, use a real secret here in your code
-		Names:    map[string]uuid.UUID{},
-	}
 	p := ubirch.Protocol{
-		Crypto:     context,
-		Signatures: map[uuid.UUID][]byte{},
+		Crypto: &ubirch.ECDSACryptoContext{
+			Keystore: ubirch.NewEncryptedKeystore([]byte("2234567890123456")), //this is only a demo code secret, use a real secret here in your code
+			Names:    map[string]uuid.UUID{},
+		},
 	}
 
 	err := loadProtocolContext(&p)
@@ -81,8 +79,16 @@ func main() {
 		}
 	}
 
+	uid, _ := p.GetUUID(name)
 	data, _ := hex.DecodeString("010203040506070809FF")
-	encoded, err := p.SignData(name, data, ubirch.Chained)
+	encoded, err := p.Sign(
+		&ubirch.SignedUPP{
+			Version:   ubirch.Signed,
+			Uuid:      uid,
+			Hint:      0,
+			Payload:   data,
+			Signature: nil,
+		})
 	if err != nil {
 		log.Fatalf("creating signed upp failed: %v", err)
 	}
